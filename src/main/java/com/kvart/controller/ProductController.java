@@ -18,10 +18,10 @@ import java.util.function.Function;
 @RequestMapping("/shop/product")
 public class ProductController {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ProductController.class);
+    public static Logger LOGGER = LoggerFactory.getLogger(ProductController.class);
 
     @Autowired
-    private ProductService productService;
+    public ProductService productService;
 
     @GetMapping
     public @ResponseBody CompletableFuture<ResponseEntity> filters
