@@ -1,46 +1,39 @@
 package com.kvart.controller;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.kvart.repo.ProductRepo;
-import com.kvart.model.Product;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.util.List;
-import java.util.regex.Pattern;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 @Controller
+@RequestMapping("/shop/product")
 public class ProductController {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ProductController.class);
+
     @Autowired
-    private ProductRepo productRepo;
+    private ProductService productService;
 
-    @GetMapping(value = "/shop/product")
-    public ResponseEntity<String> filters(@RequestParam(value = "nameFilter") String nameFilter) {
+    @GetMapping
+    public @ResponseBody CompletableFuture<ResponseEntity> filters
+            (@RequestParam(value = "nameFilter") String nameFilter) {
 
-        List<Product> products = (List<Product>) productRepo.findAll();
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        StringBuilder result = new StringBuilder();
-
-        try {
-            Pattern pattern = Pattern.compile(nameFilter, Pattern.CASE_INSENSITIVE);
-
-            for (Product product: products) {
-                if (!pattern.matcher(product.getName()).matches()) {
-                    String json = gson.toJson(product);
-                    result.append(json);
-                }
-            }
-
-            return new ResponseEntity<>(result.toString(), HttpStatus.OK);
-
-        } catch (IllegalArgumentException ex) {
-            return new ResponseEntity<>("Not Found", HttpStatus.NOT_FOUND);
-        }
+        return productService.getFilter(nameFilter).<ResponseEntity>thenApply(ResponseEntity::ok)
+                .exceptionally(handleGetProductFailure);
     }
+
+    private static Function<Throwable, ResponseEntity<? extends String>> handleGetProductFailure = throwable -> {
+        LOGGER.error("Failed to read records: {}", throwable);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    };
+
 }
