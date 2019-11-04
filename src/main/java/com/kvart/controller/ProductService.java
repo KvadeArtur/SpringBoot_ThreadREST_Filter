@@ -17,10 +17,10 @@ import java.util.regex.Pattern;
 @Service
 public class ProductService {
 
-    public static Logger LOGGER = LoggerFactory.getLogger(ProductService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ProductService.class);
 
     @Autowired
-    public ProductRepo productRepo;
+    private ProductRepo productRepo;
 
     @Async
     public CompletableFuture<String> getFilter(String nameFilter) {
@@ -40,7 +40,7 @@ public class ProductService {
             }
         }
 
-        String stringResult = result.toString();
+        final String stringResult = result.toString();
         return CompletableFuture.completedFuture(stringResult);
     }
 }
