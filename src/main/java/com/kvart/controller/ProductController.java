@@ -1,5 +1,7 @@
 package com.kvart.controller;
 
+import com.kvart.repo.ProductRepo;
+import com.kvart.service.ProductService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,12 +22,22 @@ public class ProductController {
     @Autowired
     private ProductService productService;
 
+    @Autowired
+    private ProductRepo productRepo;
+
     @GetMapping
     public @ResponseBody CompletableFuture<ResponseEntity> filters
-            (@RequestParam(value = "nameFilter") String nameFilter) {
+            (@RequestParam(value = "page", required=true) Integer page,
+             @RequestParam(value = "nameFilter", required=true) String nameFilter) {
 
-        return productService.getFilter(nameFilter).<ResponseEntity>thenApply(ResponseEntity::ok)
-                .exceptionally(handleGetProductFailure);
+        int value = (page * 10) - 9;
+
+        if (productRepo.count() < value) {
+            return CompletableFuture.completedFuture(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+        } else {
+            return productService.getFilter(page, nameFilter).<ResponseEntity>thenApply(ResponseEntity::ok)
+                    .exceptionally(handleGetProductFailure);
+        }
     }
 
     private static Function<Throwable, ResponseEntity<? extends String>> handleGetProductFailure = throwable -> {
